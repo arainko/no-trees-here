@@ -7,30 +7,18 @@ case class Builder[
 ](val selector: Selector[A]) {
   private val builder = collection.mutable.Map.empty[String, Any]
 
-  def withField[FieldTpe, Name <: String](f: Selector[A] => wrapper.Field[Name, FieldTpe])(value: FieldTpe): Builder[A, Name *: ConfiguredFields ] = {
+  def withField[FieldTpe, Name <: String](f: Selector[A] => Field[Name, FieldTpe])(value: FieldTpe): Builder[A, Name *: ConfiguredFields ] = {
     val field = f(selector)
-    builder + (field -> value)
+    builder + (field.toString -> value)
     this.copy()
   }
 }
 
-object wrapper {
-
-  opaque type Field[Name <: String, A] <: String = String
-  
-  object Field {
-    def apply[A](name: String): Field[name.type, A] = name
-  }
-}
-
-
 type MapBoth[X <: AnyNamedTuple, F[_ <: String, _]] =
     NamedTuple[Names[X], Tuple.Map[Tuple.Zip[Names[X], DropNames[X]], [x] =>> x match { case (a, b) => F[a, b] }]]
 
-import wrapper.*
-
 trait Selector[A] extends Selectable {
-  type Fields = MapBoth[NamedTuple.From[A], Field]
+  type Fields = Field.Of[A]
 
   def selectDynamic(name: String): Field[name.type, Nothing] = Field(name)
 }
@@ -39,6 +27,7 @@ def named[A <: Product: Mirror.ProductOf](value: A): NamedTuple[A.MirroredElemLa
   Tuple.fromProductTyped(value).withNames[A.MirroredElemLabels]
 
 case class Costam(int: Int, str: String)
+
 
 
 
