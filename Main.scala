@@ -1,27 +1,39 @@
 import scala.deriving.Mirror
-import NamedTuple.*
+import scala.compiletime.ops.any.IsConst
+
+enum Config[-Source, +FieldTpe] {
+  case Const(value: FieldTpe)
+  case Computed(function: Source => FieldTpe)
+}
+
+import Transformable.*
 
 case class Builder[
-  A,
+  Source,
+  Dest,
   ConfiguredFields <: Tuple
-](val selector: Selector[A]) {
-  private val builder = collection.mutable.Map.empty[String, Any]
+] private (private val configs: Map[String, Config[?, ?]]) {
+  private val selector = Selector.of[Dest]
 
-  def withField[FieldTpe, Name <: String](f: Selector[A] => Field[Name, FieldTpe])(value: FieldTpe): Builder[A, Name *: ConfiguredFields ] = {
+  type WithConfig[Name <: String, Tpe] = Builder[Source, Dest, Field[Name, Tpe] *: ConfiguredFields]
+
+  def withField[Tpe, Name <: String](f: Selector[Dest] => Field[Name, Tpe])(config: Config[Source, Tpe]): WithConfig[Name, Tpe] = {
     val field = f(selector)
-    builder + (field.toString -> value)
-    this.copy()
+    this.copy(configs = configs + (field.toString -> config))
   }
+
+  def transform(using erased (IntersectionOf[Source] & Intersection[ConfiguredFields]) <:< IntersectionOf[Dest]): Dest = ???
 }
+
+object Builder {
+  def create[Source, Dest]: Builder[Source, Dest, EmptyTuple] = Builder(Map.empty)
+}
+
+import NamedTuple.*
+
 
 type MapBoth[X <: AnyNamedTuple, F[_ <: String, _]] =
     NamedTuple[Names[X], Tuple.Map[Tuple.Zip[Names[X], DropNames[X]], [x] =>> x match { case (a, b) => F[a, b] }]]
-
-trait Selector[A] extends Selectable {
-  type Fields = Field.Of[A]
-
-  def selectDynamic(name: String): Field[name.type, Nothing] = Field(name)
-}
 
 def named[A <: Product: Mirror.ProductOf](value: A): NamedTuple[A.MirroredElemLabels, A.MirroredElemTypes] = 
   Tuple.fromProductTyped(value).withNames[A.MirroredElemLabels]
@@ -32,15 +44,20 @@ case class Costam(int: Int, str: String)
 
 
 @main def main = {
-  val builder = Builder[Costam, EmptyTuple](new Selector {})
+  val builder = Builder.create[Less, More]
 
-  val sel = new Selector[Costam] {}
+  val sel = Selector.of[Costam]
 
-  val a = builder.withField(_.int)(1)
+  val a = 
+    builder
+      // .withField(_.int)(Config.Const(1))
+      // .withField(_.str)(Config.Computed(a => a.str))
+      .withField(_.list)(Config.Const(Nil))
+      .transform
 
   println(a)
 
-  val d = sel.int
+  val d = sel.str
 
   summon["asd" <:< ("asd")]
 

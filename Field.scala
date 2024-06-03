@@ -1,9 +1,9 @@
 import NamedTuple.*
 
-opaque type Field[Name <: String, +A] = String
+opaque type Field[Name <: String, A] = String
 
 case class Less(int: Int, str: String)
-case class More(int: Int, str: CharSequence, list: List[String])
+case class More(int: Int, str: String, list: List[String])
 
 object Field {
   def apply[A](name: String): Field[name.type, A] = name
@@ -15,18 +15,4 @@ object Field {
     ]]
 
   type Of[A] = MapBoth[NamedTuple.From[A], Field]
-}
-
-object ops {
-  type Intersection[Tup <: Tuple] =
-    Tuple.Fold[Tup, Any, [acc, curr] =>> acc & curr]
-
-  type IntersectionOf[A] =
-    Intersection[NamedTuple.DropNames[Field.Of[A]]]
-
-  def canTransform[A, B](using IntersectionOf[A] <:< IntersectionOf[B]) = ???
-
-  // summon[IntersectionOf[Less] =:= IntersectionOf[More]]
-
-  canTransform[More, Less]
 }
