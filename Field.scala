@@ -1,18 +1,57 @@
 import NamedTuple.*
+import scala.annotation.internal.SourceFile
 
-opaque type Field[Name <: String, A] = String
+final class Field[Name <: String, A](val value: Name)
 
 case class Less(int: Int, str: String)
 case class More(int: Int, str: String, list: List[String])
 
 object Field {
-  def apply[A](name: String): Field[name.type, A] = name
+  type Of[Names <: Tuple, Tpes <: Tuple] =
+    Tuple.Map[
+      Tuple.Zip[Names, Tpes],
+      [x] =>> x match { case (name, tpe) => Field[name, tpe] }
+    ]
 
-  type MapBoth[X <: AnyNamedTuple, F[_ <: String, _]] =
-    NamedTuple[Names[X], Tuple.Map[
-      Tuple.Zip[Names[X], DropNames[X]],
-      [x] =>> x match { case (a, b) => F[a, b] }
-    ]]
+  type FromPair[Pair] = 
+    Pair match {
+      case (a,b) => Field[a, b]
+    }
 
-  type Of[A] = MapBoth[NamedTuple.From[A], Field]
+  type Coerce[f[_ <: String, _]] = [x] =>> x match {
+    case Field[name, tpe] => f[name, tpe]
+  }
+
+  type ExtractName[field] <: String =
+    field match {
+      case Field[name, tpe] => name
+    }
+
+  type ExtractType[field] =
+    field match {
+      case Field[name, tpe] => tpe
+    }
+
+  type Names[Fields <: Tuple] <: Tuple =
+    Fields match {
+      case EmptyTuple => EmptyTuple
+      case Field[name, tpe] *: tail =>  name *: Names[tail]
+    }
+    
+
+  type Types[Fields <: Tuple] =
+    Tuple.Map[Fields, ExtractType]
+
+  type TypeOf[Name, Fields <: Tuple] =
+    Fields match {
+      case EmptyTuple => Nothing
+      case Field[Name, tpe] *: tail => tpe
+      case h *: t => TypeOf[Name, t]
+    }
+
+  type TransformersOf[SourceFields <: Tuple, DestFields <: Tuple] =
+    Tuple.Map[SourceFields, [x] =>> x match { case Field[srcName, srcTpe] => srcTpe is TransformableInto[TypeOf[srcName, DestFields]] }]
+
+  type NamedOf[Names <: Tuple, Types <: Tuple] =
+    NamedTuple[Names, Field.Of[Names, Types]]
 }

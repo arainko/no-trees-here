@@ -8,10 +8,11 @@ trait TransformableInto[Dest] {
   def transform(value: Self): Dest
 }
 
-object Transformer {
-  given identity[A, B >: A]: (A is TransformableInto[B]) with {
-    def transform(value: Self): B = value
+object TransformableInto {
+  given identity[A]: (A is TransformableInto[A]) with {
+    def transform(value: Self): A = value
   }
+
 
   // inline def derived[A: Mirror.Of, B: Mirror.Of]: A is TransformableInto[B] = {
   //   def transform(value: A): B = {

@@ -1,13 +1,12 @@
 import scala.deriving.Mirror
-import Transformable.*
 import NamedTuple.*
 
-final class Selector[A] extends Selectable {
-  final type Fields = Field.Of[A]
+final class Selector[Names <: Tuple, Types <: Tuple] extends Selectable {
+  final type Fields = Field.NamedOf[Names, Types]
 
   def selectDynamic(name: String): Field[name.type, Nothing] = Field(name)
 }
 
 object Selector {
-  def of[A]: Selector[A] = Selector[A] 
+  def of[Names <: Tuple, Types <: Tuple]: Selector[Names, Types] = Selector()
 }
