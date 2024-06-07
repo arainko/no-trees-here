@@ -38,6 +38,11 @@ object Field {
       case Field[name, tpe] *: tail =>  name *: Names[tail]
     }
     
+  // type Remove[Name <: String, Fields <: Tuple] <: Tuple =
+  //   Fields match {
+  //     case EmptyTuple => EmptyTuple
+  //     case Field[Name, tpe] *: tail =>
+  //   }
 
   type Types[Fields <: Tuple] =
     Tuple.Map[Fields, ExtractType]

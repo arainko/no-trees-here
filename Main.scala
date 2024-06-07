@@ -1,15 +1,15 @@
 import scala.deriving.Mirror
 import scala.compiletime.ops.any.IsConst
 import scala.annotation.compileTimeOnly
+import scala.compiletime.*
 
 enum Config[-Source, +FieldTpe] {
   case Const(value: FieldTpe)
   case Computed(function: Source => FieldTpe)
 }
 
-
 case class Builder[
-    Source,
+    Source <: Product,
     Dest,
     SourceFields <: Tuple,
     DestFields <: Tuple,
@@ -28,30 +28,45 @@ case class Builder[
     this.copy(configs = configs + (field.toString -> config))
   }
 
-  inline def transform: Dest = {
-    // compiletime.summonAll[Tuple.Map[DestNames, [name] =>> Field.TypeOf[name, DestFields]]]
-    compiletime.summonAll[Field.TransformersOf[SourceFields, DestFields]]
-    // compiletime.summonInline[Field.TypeOf[Tuple.Head[DestNames], DestFields]]
-    ???
+  inline def transform(
+      source: Source
+  )(using Dest: Mirror.ProductOf[Dest]): Dest = {
+    val transformers = summonAll[Field.TransformersOf[SourceFields, DestFields]]
+    val listOfTransformers =
+      transformers.toList.asInstanceOf[List[Any is TransformableInto[Any]]]
+    val labels =
+      summonAll[Tuple.Map[Field.Names[DestFields], ValueOf]].toList
+        .asInstanceOf[List[ValueOf[String]]]
+        .map(_.value.toString)
+
+    val transformedErasedSource = 
+      source.productElementNames
+      .zip(listOfTransformers.zip(source.productIterator).map((transformer, value) => transformer.transform(value)))
+      .toMap
+
+    Dest.fromProduct {
+      Tuple.fromArray[Any](labels.map(transformedErasedSource).toArray)
+    }
   }
 }
 
 object Builder {
-  def create[Source: Mirror.ProductOf, Dest: Mirror.ProductOf]: Builder[
-    Source,
-    Dest,
-    Tuple.Map[
-      Tuple.Zip[Source.MirroredElemLabels, Source.MirroredElemTypes],
-      Field.FromPair
-    ],
-    Tuple.Map[
-      Tuple.Zip[Dest.MirroredElemLabels, Dest.MirroredElemTypes],
-      Field.FromPair
-    ],
-    Dest.MirroredElemLabels,
-    Dest.MirroredElemTypes,
-    EmptyTuple
-  ] = Builder(Map.empty)
+  def create[Source <: Product: Mirror.ProductOf, Dest: Mirror.ProductOf]
+      : Builder[
+        Source,
+        Dest,
+        Tuple.Map[
+          Tuple.Zip[Source.MirroredElemLabels, Source.MirroredElemTypes],
+          Field.FromPair
+        ],
+        Tuple.Map[
+          Tuple.Zip[Dest.MirroredElemLabels, Dest.MirroredElemTypes],
+          Field.FromPair
+        ],
+        Dest.MirroredElemLabels,
+        Dest.MirroredElemTypes,
+        EmptyTuple
+      ] = Builder(Map.empty)
 }
 
 import NamedTuple.*
@@ -72,25 +87,17 @@ case class Costam2(int: Int, str: String)
 
   // given List[String] = Nil
 
-
-
   val a =
     builder
       // .withField(_.int)(Config.Const(1))
-      .transform
+      .transform(Costam(1, "asd"))
 
-
-
-
-
-    // .withField(_.int)(Config.Const(1))
-    // .withField(_.str)(Config.Computed(a => a.str))
-    // .withField(_.list)(Config.Const(Nil))
-    // .transform
-
+      // .withField(_.int)(Config.Const(1))
+      // .withField(_.str)(Config.Computed(a => a.str))
+      // .withField(_.list)(Config.Const(Nil))
+      // .transform
 
   println(a)
-
 
   val d = sel.str
 
