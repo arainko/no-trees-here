@@ -3,12 +3,13 @@ type Sequence[T <: Tuple, F[_]] =
 
 object Sequence {
   def run[T <: Tuple: Tuple.IsMappedBy[F], F[_]](
-    value: T,
-    f: [a] => List[F[a]] => F[List[a]],
-    map: [a, b] => (fa: F[a], f: a => b) => F[b]
+      value: T,
+      seq: [a] => List[F[a]] => F[List[a]],
+      map: [a, b] => (F[a], a => b) => F[b]
   ): Sequence[T, F] = {
     val values = value.productIterator.asInstanceOf[Iterator[F[Any]]].toList
-    map(f(values), list => Tuple.fromArray(list.toArray)).asInstanceOf[Sequence[T, F]]
+    map(seq(values), list => Tuple.fromArray(list.toArray))
+      .asInstanceOf[Sequence[T, F]]
   }
 
   // type a = Tuple.IsMappedBy[]
@@ -17,5 +18,18 @@ object Sequence {
 
   type Output = Option[(Int, String, Double, Float)]
 
-  val cos = run[Input, Option]((Some(1), Some("Str"), Some(1d), Some(1f)), [a] => (list: List[Option[a]]) => list.reduce(_ zip _))
+  val cos = run[Input, Option](
+    (Some(1), Some("Str"), Some(1d), Some(1f)),
+    [a] =>
+      _.foldLeft(Option(List.empty[a]))((curr, acc) =>
+        acc.zip(curr).map(_ :: _)
+      ).map(_.reverse),
+    [a, b] => _.map(_)
+  )
+}
+
+@main def main2 = {
+  println {
+    Sequence.cos.map(_._1)
+  }
 }

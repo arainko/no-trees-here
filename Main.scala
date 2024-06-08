@@ -33,7 +33,7 @@ case class Builder[
   )(using Dest: Mirror.ProductOf[Dest]): Dest = {
     val transformers = summonAll[Field.TransformersOf[SourceFields, DestFields]]
     val listOfTransformers =
-      transformers.toList.asInstanceOf[List[Any is TransformableInto[Any]]]
+      transformers.toList.asInstanceOf[List[Any has Transformer[Any]]]
     val labels =
       summonAll[Tuple.Map[Field.Names[DestFields], ValueOf]].toList
         .asInstanceOf[List[ValueOf[String]]]

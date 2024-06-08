@@ -3,7 +3,7 @@ erased trait Transformable[B] {
 }
 
 object Transformable {
-  // erased given derived[A, B](using erased IntersectionOf[A] <:< IntersectionOf[B]): (A is Transformable[B]) =
+  // erased given derived[A, B](using erased IntersectionOf[A] <:< IntersectionOf[B]): (A has Transformable[B]) =
   //   compiletime.erasedValue
 
   type Intersection[Tup <: Tuple] =

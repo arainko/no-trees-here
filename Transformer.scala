@@ -2,19 +2,21 @@ import scala.language.experimental.modularity
 import scala.deriving.Mirror
 import scala.compiletime.*
 
-trait TransformableInto[Dest] {
+trait Transformer[Dest] {
   type Self
 
   def transform(value: Self): Dest
 }
 
-object TransformableInto {
-  given identity[A]: (A is TransformableInto[A]) with {
+object Transformer {
+  given identity[A]: (A has Transformer[A]) with {
     def transform(value: Self): A = value
   }
 
+  // trait Fallible[Dest] extends TransformableInto[]
 
-  // inline def derived[A: Mirror.Of, B: Mirror.Of]: A is TransformableInto[B] = {
+
+  // inline def derived[A: Mirror.Of, B: Mirror.Of]: A has TransformableInto[B] = {
   //   def transform(value: A): B = {
   //     val summoned = 
   //   }
@@ -22,7 +24,7 @@ object TransformableInto {
   //   Derived[A, B](???)
   // }
 
-  final class Derived[A, B](f: A => B) extends (A is TransformableInto[B]) {
+  final class Derived[A, B](f: A => B) extends (A has Transformer[B]) {
     def transform(value: Self): B = f(value)
   }
 }
