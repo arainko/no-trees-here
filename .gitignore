@@ -2,3 +2,4 @@
 .scala-build/*
 .metals/*
 .bsp/*
+target/

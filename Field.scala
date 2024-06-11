@@ -37,30 +37,52 @@ object Field {
       case Field[name, tpe] *: tail => name *: Names[tail]
     }
 
-  // type Remove[Name <: String, Fields <: Tuple] <: Tuple =
-  //   Fields match {
-  //     case EmptyTuple => EmptyTuple
-  //     case Field[Name, tpe] *: tail =>
-  //   }
+  type Remove[Name <: String, Fields <: Tuple] <: Tuple =
+    Fields match {
+      case EmptyTuple               => EmptyTuple
+      case Field[Name, tpe] *: tail => Remove[Name, tail]
+      case head *: tail             => head *: Remove[Name, tail]
+    }
 
   type Types[Fields <: Tuple] =
     Tuple.Map[Fields, ExtractType]
 
   type TypeOf[Name, Fields <: Tuple] =
     Fields match {
+      case EmptyTuple => Nothing
       case Field[Name, tpe] *: tail => tpe
       case h *: t                   => TypeOf[Name, t]
     }
 
+  type SummonFieldWise[SourceFields <: Tuple, DestFields <: Tuple] =
+    DestFields match {
+      case EmptyTuple => EmptyTuple
+      case _ =>
+        Tuple.Map[
+          SourceFields,
+          [x] =>> x match {
+            case Field[srcName, srcTpe] =>
+              FieldTransformer[srcName, srcTpe, TypeOf[srcName, DestFields]]
+          }
+        ]
+    }
+
   type TransformersOf[SourceFields <: Tuple, DestFields <: Tuple] =
-    Tuple.Map[
-      SourceFields,
-      [x] =>> x match {
-        case Field[srcName, srcTpe] =>
-          srcTpe has Transformer[TypeOf[srcName, DestFields]]
-      }
-    ]
+    SummonFieldWise[SourceFields, DestFields]
+
+  // type FallibleTransformersOf[SourceFields <: Tuple, DestFields <: Tuple] =
+    // SummonFieldWise[SourceFields, DestFields, [src, dest] =>> Transformer.Fallible[src, dest]]
 
   type NamedOf[Names <: Tuple, Types <: Tuple] =
     NamedTuple[Names, Field.Of[Names, Types]]
+}
+
+case class FieldTransformer[Name <: String, Source, Dest](name: Name, transformer: Transformer[Source, Dest])
+
+object FieldTransformer {
+  given derived[Name <: String, Source, Dest](using
+      name: ValueOf[Name],
+      transformer: Transformer[Source, Dest]
+  ): FieldTransformer[Name, Source, Dest] =
+    FieldTransformer(name.value, transformer)
 }
