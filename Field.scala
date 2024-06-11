@@ -52,14 +52,20 @@ object Field {
       case h *: t                   => TypeOf[Name, t]
     }
 
-  type TransformersOf[SourceFields <: Tuple, DestFields <: Tuple] =
+  type SummonFieldWise[SourceFields <: Tuple, DestFields <: Tuple, TC[_, _]] =
     Tuple.Map[
       SourceFields,
       [x] =>> x match {
         case Field[srcName, srcTpe] =>
-          srcTpe has Transformer[TypeOf[srcName, DestFields]]
+          TC[srcTpe, TypeOf[srcName, DestFields]]
       }
     ]
+
+  type TransformersOf[SourceFields <: Tuple, DestFields <: Tuple] =
+    SummonFieldWise[SourceFields, DestFields, [src, dest] =>> src has Transformer[dest]]
+    
+  type FallibleTransformersOf[SourceFields <: Tuple, DestFields <: Tuple] =
+    SummonFieldWise[SourceFields, DestFields, [src, dest] =>> src has Transformer.Fallible[dest]]
 
   type NamedOf[Names <: Tuple, Types <: Tuple] =
     NamedTuple[Names, Field.Of[Names, Types]]

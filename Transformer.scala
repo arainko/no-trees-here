@@ -13,16 +13,13 @@ object Transformer {
     def transform(value: Self): A = value
   }
 
-  // trait Fallible[Dest] extends TransformableInto[]
+  trait Fallible[Dest] extends Transformer[Either[String, Dest]]
 
-
-  // inline def derived[A: Mirror.Of, B: Mirror.Of]: A has TransformableInto[B] = {
-  //   def transform(value: A): B = {
-  //     val summoned = 
-  //   }
-
-  //   Derived[A, B](???)
-  // }
+  object Fallible {
+    given identity[A, B >: A]: (A has Transformer.Fallible[B]) with {
+      def transform(value: Self): Either[String, B] = Right(value)
+    }
+  }
 
   final class Derived[A, B](f: A => B) extends (A has Transformer[B]) {
     def transform(value: Self): B = f(value)

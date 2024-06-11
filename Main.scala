@@ -39,14 +39,45 @@ case class Builder[
         .asInstanceOf[List[ValueOf[String]]]
         .map(_.value.toString)
 
-    val transformedErasedSource = 
+    val transformedErasedSource =
       source.productElementNames
-      .zip(listOfTransformers.zip(source.productIterator).map((transformer, value) => transformer.transform(value)))
-      .toMap
+        .zip(
+          listOfTransformers
+            .zip(source.productIterator)
+            .map((transformer, value) => transformer.transform(value))
+        )
+        .toMap
 
     Dest.fromProduct {
       Tuple.fromArray[Any](labels.map(transformedErasedSource).toArray)
     }
+  }
+
+  inline def fallibleTransform(
+      source: Source
+  )(using Dest: Mirror.ProductOf[Dest]): Either[String, Dest] = {
+    val transformers =
+      summonAll[Field.FallibleTransformersOf[SourceFields, DestFields]]
+    val listOfTransformers =
+      transformers.toList.asInstanceOf[List[Any has Transformer.Fallible[Any]]]
+    val labels =
+      summonAll[Tuple.Map[Field.Names[DestFields], ValueOf]].toList
+        .asInstanceOf[List[ValueOf[String]]]
+        .map(_.value.toString)
+
+    val transformedErasedSource =
+      source.productElementNames
+        .zip(
+          listOfTransformers
+            .zip(source.productIterator)
+            .map((transformer, value) => transformer.transform(value))
+        )
+        .toMap
+
+    
+
+    val tupleOfEithers = Tuple.fromArray[Any](labels.map(transformedErasedSource).toArray)
+    Sequence.runEither(tupleOfEithers).map(Dest.fromProduct)
   }
 }
 
@@ -72,7 +103,16 @@ object Builder {
 import NamedTuple.*
 
 case class Costam(int: Int, str: String)
-case class Costam2(int: Int, str: String)
+case class Costam2(int: NonNegative, str: String)
+
+case class NonNegative(value: Int)
+
+object NonNegative {
+  given (Int has Transformer.Fallible[NonNegative]) = new {
+    def transform(value: Int): Either[String, NonNegative] = 
+      if (value < 0) Left(s"$value is < 0") else Right(NonNegative(value))
+  }
+}
 
 @main def main = {
 
@@ -88,14 +128,15 @@ case class Costam2(int: Int, str: String)
   // given List[String] = Nil
 
   val a =
-    builder
-      // .withField(_.int)(Config.Const(1))
-      .transform(Costam(1, "asd"))
+    io.github.arainko.ducktape.Transformer.Debug.showCode:
+      builder
+        // .withField(_.int)(Config.Const(1))
+        .fallibleTransform(Costam(-1, "asd"))
 
-      // .withField(_.int)(Config.Const(1))
-      // .withField(_.str)(Config.Computed(a => a.str))
-      // .withField(_.list)(Config.Const(Nil))
-      // .transform
+    // .withField(_.int)(Config.Const(1))
+    // .withField(_.str)(Config.Computed(a => a.str))
+    // .withField(_.list)(Config.Const(Nil))
+    // .transform
 
   println(a)
 
