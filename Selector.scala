@@ -1,6 +1,3 @@
-import scala.deriving.Mirror
-import NamedTuple.*
-
 final class Selector[Names <: Tuple, Types <: Tuple] extends Selectable {
   final type Fields = Field.NamedOf[Names, Types]
 

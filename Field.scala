@@ -2,9 +2,6 @@ import NamedTuple.*
 
 final class Field[Name <: String, A](val value: Name)
 
-case class Less(int: Int, str: String)
-case class More(int: Int, str: String, list: List[String])
-
 object Field {
   type Of[Names <: Tuple, Tpes <: Tuple] =
     Tuple.Map[
@@ -49,40 +46,22 @@ object Field {
 
   type TypeOf[Name, Fields <: Tuple] =
     Fields match {
-      case EmptyTuple => Nothing
       case Field[Name, tpe] *: tail => tpe
       case h *: t                   => TypeOf[Name, t]
     }
 
   type SummonFieldWise[SourceFields <: Tuple, DestFields <: Tuple] =
-    DestFields match {
-      case EmptyTuple => EmptyTuple
-      case _ =>
-        Tuple.Map[
-          SourceFields,
-          [x] =>> x match {
-            case Field[srcName, srcTpe] =>
-              FieldTransformer[srcName, srcTpe, TypeOf[srcName, DestFields]]
-          }
-        ]
-    }
+    Tuple.Map[
+      DestFields,
+      [x] =>> x match {
+        case Field[destName, destTpe] =>
+          FieldTransformer[destName, TypeOf[destName, SourceFields], destTpe]
+      }
+    ]
 
   type TransformersOf[SourceFields <: Tuple, DestFields <: Tuple] =
     SummonFieldWise[SourceFields, DestFields]
 
-  // type FallibleTransformersOf[SourceFields <: Tuple, DestFields <: Tuple] =
-    // SummonFieldWise[SourceFields, DestFields, [src, dest] =>> Transformer.Fallible[src, dest]]
-
   type NamedOf[Names <: Tuple, Types <: Tuple] =
     NamedTuple[Names, Field.Of[Names, Types]]
-}
-
-case class FieldTransformer[Name <: String, Source, Dest](name: Name, transformer: Transformer[Source, Dest])
-
-object FieldTransformer {
-  given derived[Name <: String, Source, Dest](using
-      name: ValueOf[Name],
-      transformer: Transformer[Source, Dest]
-  ): FieldTransformer[Name, Source, Dest] =
-    FieldTransformer(name.value, transformer)
 }
