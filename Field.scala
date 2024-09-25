@@ -1,5 +1,6 @@
 import NamedTuple.*
 
+// ============ introduced in the 'fancy' section
 final class Field[Name <: String, A](val value: Name)
 
 object Field {
@@ -8,6 +9,28 @@ object Field {
       Tuple.Zip[Names, Tpes],
       [x] =>> x match { case (name, tpe) => Field[name, tpe] }
     ]
+// ============ introduced in the 'fancy' section
+
+// =========== introduced in the 'fancier' section
+  type TypeOf[Name, Fields <: Tuple] =
+    Fields match {
+      case Field[Name, tpe] *: tail => tpe
+      case h *: t                   => TypeOf[Name, t]
+    }
+
+  type SummonFieldWise[SourceFields <: Tuple, DestFields <: Tuple] =
+    Tuple.Map[
+      DestFields,
+      [x] =>> x match {
+        case Field[destName, destTpe] =>
+          FieldTransformer[destName, TypeOf[destName, SourceFields], destTpe]
+      }
+    ]
+
+  type TransformersOf[SourceFields <: Tuple, DestFields <: Tuple] =
+    SummonFieldWise[SourceFields, DestFields]
+
+// =========== introduced in the 'fancier' section
 
   type FromPair[Pair] =
     Pair match {
@@ -43,24 +66,6 @@ object Field {
 
   type Types[Fields <: Tuple] =
     Tuple.Map[Fields, ExtractType]
-
-  type TypeOf[Name, Fields <: Tuple] =
-    Fields match {
-      case Field[Name, tpe] *: tail => tpe
-      case h *: t                   => TypeOf[Name, t]
-    }
-
-  type SummonFieldWise[SourceFields <: Tuple, DestFields <: Tuple] =
-    Tuple.Map[
-      DestFields,
-      [x] =>> x match {
-        case Field[destName, destTpe] =>
-          FieldTransformer[destName, TypeOf[destName, SourceFields], destTpe]
-      }
-    ]
-
-  type TransformersOf[SourceFields <: Tuple, DestFields <: Tuple] =
-    SummonFieldWise[SourceFields, DestFields]
 
   type NamedOf[Names <: Tuple, Types <: Tuple] =
     NamedTuple[Names, Field.Of[Names, Types]]
