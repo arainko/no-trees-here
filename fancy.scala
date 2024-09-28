@@ -8,8 +8,6 @@ type Intersection[A <: Tuple] = Tuple.Fold[A, Any, [a, b] =>> a & b]
 
 val src = Source(1, "str", List(1, 2, 3), 1d)
 
-val dest = src.convertTo[Dest]
-
 extension [Source <: Product](self: Source) {
   inline def convertTo[Dest](using
       Source: Mirror.ProductOf[Source],
@@ -19,10 +17,9 @@ extension [Source <: Product](self: Source) {
         Intersection[Field.Of[Dest.MirroredElemLabels, Dest.MirroredElemTypes]]
   ): Dest = {
     val erasedSource = self.productElementNames.zip(self.productIterator).toMap
-    val destLabels = summonAll[Tuple.Map[Dest.MirroredElemLabels, ValueOf]].toList
-      .asInstanceOf[List[ValueOf[String]]]
+    val destLabels = constValueTuple[Dest.MirroredElemLabels].toList.asInstanceOf[List[String]]
     Dest.fromProduct(
-      Tuple.fromArray[Any](destLabels.map(label => erasedSource(label.value)).toArray)
+      Tuple.fromArray[Any](destLabels.map(label => erasedSource(label)).toArray)
     )
   }
 }

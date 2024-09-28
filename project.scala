@@ -1,4 +1,4 @@
-//> using scala 3.5.1
+//> using scala 3.5.0
 //> using option -source:future
 //> using option -language:experimental.modularity
 //> using option -language:experimental.namedTuples

@@ -39,19 +39,17 @@ case class Builder[
         .map(fieldTransformer => fieldTransformer.name -> fieldTransformer.transformer)
         .toMap
 
-    val destLabels =
-      summonAll[Tuple.Map[DestNames, ValueOf]].toList
-        .asInstanceOf[List[ValueOf[String]]]
+    val destLabels = constValueTuple[DestNames].toList.asInstanceOf[List[String]]
 
     val erasedSource =
       source.productElementNames.zip(source.productIterator).toMap
 
     val destValues = destLabels.map { label =>
       fieldTransformers
-        .get(label.value)
-        .map(transformer => transformer.transform(erasedSource(label.value)))
+        .get(label)
+        .map(transformer => transformer.transform(erasedSource(label)))
         .getOrElse {
-          configs(label.value) match
+          configs(label) match
             case Config.Const(value)       => value
             case Config.Computed(function) => function(source)
         }
