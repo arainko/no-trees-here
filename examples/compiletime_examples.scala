@@ -1,3 +1,5 @@
+package examples
+
 import scala.deriving.Mirror
 import scala.compiletime.*
 
