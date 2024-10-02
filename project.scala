@@ -5,5 +5,5 @@
 //> using option -Xkind-projector:underscores
 //> using option -deprecation
 //> using option -Wunused:all
-//> using dep io.github.arainko::ducktape:0.2.2
+//> using dep io.github.arainko::ducktape:0.2.5
 //> using dep "org.scalameta::munit:1.0.2"

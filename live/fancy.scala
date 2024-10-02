@@ -1,0 +1,5 @@
+package live
+
+object fancy {
+  
+}

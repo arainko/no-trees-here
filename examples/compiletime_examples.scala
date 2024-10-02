@@ -1,7 +1,6 @@
 package examples
 
 import scala.deriving.Mirror
-import scala.compiletime.*
 
 object compiletime_examples {
   import scala.compiletime.*

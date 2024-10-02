@@ -1,3 +1,5 @@
+package done
+
 import NamedTuple.*
 
 enum Config[-Source, +FieldTpe] {

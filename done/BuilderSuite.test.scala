@@ -1,3 +1,5 @@
+package done
+
 import munit.FunSuite
 
 class BuilderSuite extends FunSuite {

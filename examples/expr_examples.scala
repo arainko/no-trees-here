@@ -1,5 +1,7 @@
 package examples
 
+import scala.annotation.nowarn
+
 object expr_examples {
   import scala.quoted.*
 
@@ -21,6 +23,7 @@ object expr_examples {
     Expr.ofList(recurse[A].map(Expr.apply))
   }
 
+  @nowarn("msg=pattern")
   def literalStringsLowLevel[A <: Tuple: Type](using Quotes): Expr[List[String]] = {
     import quotes.reflect.*
     def recurse(using Quotes)(tpe: quotes.reflect.TypeRepr): List[String] = {

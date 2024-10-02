@@ -1,3 +1,5 @@
+package done
+
 import scala.compiletime.*
 import scala.deriving.Mirror
 

@@ -1,3 +1,5 @@
+package done
+
 import scala.language.experimental.modularity
 
 // =========== introduced in the 'fancier' section
