@@ -3,10 +3,10 @@ package done
 import scala.deriving.Mirror
 import scala.compiletime.*
 
-val dest1 =
-  io.github.arainko.ducktape.Transformer.Debug.showCode {
-    src.fancierConvertTo[Dest]
-  }
+// val dest1 =
+//   io.github.arainko.ducktape.Transformer.Debug.showCode {
+//     src.fancierConvertTo[Dest]
+//   }
 
 extension [Source <: Product](self: Source) {
   inline def fancierConvertTo[Dest](using

@@ -16,8 +16,8 @@ object basic {
       numberOfTracks: Int
   )
 
-  extension [Source](self: Source) {
-    inline def convertTo[Dest]: Dest = ???
+  extension [Source <: Product](self: Source) {
+    inline def convertTo[Dest] = ???
   }
 
   @main def basicTest = {
@@ -36,6 +36,9 @@ object basic {
     )
 
     val actual = detailedAlbum.convertTo[Album]
+    // val notCompiling = expected.convertTo[EverSoSlightlyMoreDetailedAlbum]
+
+    println(actual)
 
     assert(actual == expected)
   }

@@ -20,7 +20,7 @@ object Field {
       case h *: t                   => TypeOf[Name, t]
     }
 
-  type SummonFieldWise[SourceFields <: Tuple, DestFields <: Tuple] =
+  type TransformersOf[SourceFields <: Tuple, DestFields <: Tuple] =
     Tuple.Map[
       DestFields,
       [x] =>> x match {
@@ -28,9 +28,6 @@ object Field {
           FieldTransformer[destName, TypeOf[destName, SourceFields], destTpe]
       }
     ]
-
-  type TransformersOf[SourceFields <: Tuple, DestFields <: Tuple] =
-    SummonFieldWise[SourceFields, DestFields]
 
 // =========== introduced in the 'fancier' section
 
