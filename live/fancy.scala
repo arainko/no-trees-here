@@ -1,5 +1,0 @@
-package live
-
-object fancy {
-  
-}

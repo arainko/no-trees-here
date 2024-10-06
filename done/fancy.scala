@@ -2,6 +2,7 @@ package done
 
 import scala.compiletime.*
 import scala.deriving.Mirror
+import java.time.LocalDate
 
 case class Builder[
     Source <: Product,
@@ -11,7 +12,7 @@ case class Builder[
     ConfiguredDestFields <: Tuple,
     DestNames <: Tuple,
     DestTypes <: Tuple
-] private (private val configs: Map[String, Config[Any, Any]]) {
+] private (private val source: Source, private val configs: Map[String, Config[Any, Any]]) {
   private val selector = Selector.of[DestNames, DestTypes]
 
   type WithConfig[Name <: String, Tpe] =
@@ -32,9 +33,7 @@ case class Builder[
     this.copy(configs = configs + (field.value -> config.asInstanceOf[Config[Any, Any]]))
   }
 
-  inline def transform(
-      source: Source
-  )(using Dest: Mirror.ProductOf[Dest]): Dest = {
+  inline def transform(using Dest: Mirror.ProductOf[Dest]): Dest = {
     val fieldTransformers =
       summonAll[Field.TransformersOf[SourceFields, TransformedDestFields]].toList
         .asInstanceOf[List[FieldTransformer[String, Any, Any]]]
@@ -62,7 +61,7 @@ case class Builder[
 }
 
 object Builder {
-  def create[Source <: Product: Mirror.ProductOf, Dest: Mirror.ProductOf]: Builder[
+  def create[Source <: Product: Mirror.ProductOf, Dest: Mirror.ProductOf](source: Source): Builder[
     Source,
     Dest,
     Tuple.Map[
@@ -76,5 +75,55 @@ object Builder {
     EmptyTuple,
     Dest.MirroredElemLabels,
     Dest.MirroredElemTypes
-  ] = Builder(Map.empty)
+  ] = Builder(source, Map.empty)
+}
+
+extension [Source <: Product](self: Source) {
+  def into[Dest](using Mirror.ProductOf[Source], Mirror.ProductOf[Dest]) =
+    Builder.create[Source, Dest](self)
+}
+
+@main def fancyTest = {
+  case class Album(
+      name: String,
+      artist: String,
+      releaseDate: LocalDate
+  )
+
+  case class EverSoSlightlyMoreDetailedAlbum(
+      releaseDate: LocalDate,
+      artist: String,
+      name: String,
+      numberOfTracks: Int,
+      label: String
+  )
+
+  val detailedAlbum =
+    EverSoSlightlyMoreDetailedAlbum(
+      releaseDate = LocalDate.of(2024, 9, 27),
+      artist = "Xiu Xiu",
+      name = "13'' Frank Beltrame Italian Stiletto with Bison Horn Grips",
+      numberOfTracks = 9,
+      label = "Polyvinyl Record Co."
+    )
+
+  val album = Album(
+    name = "13'' Frank Beltrame Italian Stiletto with Bison Horn Grips",
+    artist = "Xiu Xiu",
+    releaseDate = LocalDate.of(2024, 9, 27)
+  )
+
+  val detailedToAlbum = detailedAlbum.convertTo[Album] // works!
+
+  val albumToDetailed = album
+    .into[EverSoSlightlyMoreDetailedAlbum]
+    .withField(_.numberOfTracks)(Config.Const(9))
+    .withField(_.label)(Config.Const("Polyvinyl Record Co."))
+    .transform // works!
+
+  println(albumToDetailed)
+  println(detailedToAlbum)
+
+  assert(album == detailedToAlbum)
+  assert(detailedAlbum == albumToDetailed)
 }

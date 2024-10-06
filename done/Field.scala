@@ -20,6 +20,16 @@ object Field {
       case h *: t                   => TypeOf[Name, t]
     }
 
+  type FieldWiseTransformers[Source <: Tuple, Dest <: Tuple] = 
+    Tuple.Map[
+      Dest,
+      [a] =>> a match { 
+        case Field[name, tpe] => Transformer[TypeOf[name, Source], tpe]
+      }
+    ]
+
+// =========== introduced in the 'fancier' section
+
   type TransformersOf[SourceFields <: Tuple, DestFields <: Tuple] =
     Tuple.Map[
       DestFields,
@@ -28,8 +38,6 @@ object Field {
           FieldTransformer[destName, TypeOf[destName, SourceFields], destTpe]
       }
     ]
-
-// =========== introduced in the 'fancier' section
 
   type FromPair[Pair] =
     Pair match {

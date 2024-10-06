@@ -3,11 +3,6 @@ package done
 import scala.deriving.Mirror
 import scala.compiletime.*
 
-// val dest1 =
-//   io.github.arainko.ducktape.Transformer.Debug.showCode {
-//     src.fancierConvertTo[Dest]
-//   }
-
 extension [Source <: Product](self: Source) {
   inline def fancierConvertTo[Dest](using
       Source: Mirror.ProductOf[Source],
@@ -16,18 +11,23 @@ extension [Source <: Product](self: Source) {
     type SourceFields = Field.Of[Source.MirroredElemLabels, Source.MirroredElemTypes]
     type DestFields = Field.Of[Dest.MirroredElemLabels, Dest.MirroredElemTypes]
 
+    val erasedSource = self.productElementNames.zip(self.productIterator).toMap
+
     val transformers =
-      summonAll[Field.TransformersOf[SourceFields, DestFields]].toList
-        .asInstanceOf[List[FieldTransformer[String, Any, Any]]]
-        .map(fieldTransformer => fieldTransformer.name -> fieldTransformer)
-        .toMap
+      summonAll[Field.FieldWiseTransformers[SourceFields, DestFields]].toList.asInstanceOf[List[Transformer[Any, Any]]]
 
     val destLabels = constValueTuple[Dest.MirroredElemLabels].toList.asInstanceOf[List[String]]
 
-    val erasedSource = self.productElementNames.zip(self.productIterator).toMap
-
+    val transformerMap = destLabels.zip(transformers).toMap
+    
     Dest.fromProduct(
-      Tuple.fromArray[Any](destLabels.map(label => transformers(label).transformer.transform(erasedSource(label))).toArray)
+      Tuple.fromArray[Any] {
+        destLabels.map { label =>
+          val sourceValue = erasedSource(label)
+          val transformer = transformerMap(label)
+          transformer.transform(sourceValue)
+        }.toArray
+      }
     )
   }
 }

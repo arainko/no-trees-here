@@ -1,8 +1,11 @@
 package live
 
 import java.time.LocalDate
+import scala.compiletime.*
+import scala.deriving.Mirror
 
 object basic {
+
   case class Album(
       name: String,
       artist: String,
@@ -17,10 +20,14 @@ object basic {
   )
 
   extension [Source <: Product](self: Source) {
-    inline def convertTo[Dest] = ???
+    inline def convertTo[Dest](using
+        Source: Mirror.ProductOf[Source],
+        Dest: Mirror.ProductOf[Dest]
+    ) = ???
   }
 
   @main def basicTest = {
+
     val detailedAlbum =
       EverSoSlightlyMoreDetailedAlbum(
         releaseDate = LocalDate.of(2024, 9, 27),
