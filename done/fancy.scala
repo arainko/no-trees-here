@@ -61,7 +61,9 @@ case class Builder[
 }
 
 object Builder {
-  def create[Source <: Product: Mirror.ProductOf, Dest: Mirror.ProductOf](source: Source): Builder[
+  def create[Source <: Product, Dest](
+      source: Source
+  )(using Source: Mirror.ProductOf[Source], Dest: Mirror.ProductOf[Dest]): Builder[
     Source,
     Dest,
     Tuple.Map[
